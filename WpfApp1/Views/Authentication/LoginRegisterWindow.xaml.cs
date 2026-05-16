@@ -10,7 +10,6 @@ namespace PharmacyApp.Views
         public LoginRegisterWindow()
         {
             InitializeComponent();
-            Loaded += async (s, e) => await AuthenticationService.EnsureFirstAdminCreatedAsync();
             Loaded += OnLoaded;
 
         }

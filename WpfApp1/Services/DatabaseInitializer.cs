@@ -30,16 +30,22 @@ namespace PharmacyApp.Services
             using (var connection = new SqlConnection(TargetConnectionString))
             {
                 connection.Open();
-                // Удаляем все пользовательские таблицы, кроме системных и миграций
-                var dropAllScript = @"
-                    DECLARE @sql NVARCHAR(MAX) = N'';
-                    SELECT @sql = @sql + 'DROP TABLE ' + QUOTENAME(s.name) + '.' + QUOTENAME(t.name) + ';'
-                    FROM sys.tables t
-                    JOIN sys.schemas s ON t.schema_id = s.schema_id
-                    WHERE t.name NOT IN ('__EFMigrationsHistory');
-                    EXEC sp_executesql @sql;
-                ";
-                using (var cmd = new SqlCommand(dropAllScript, connection))
+                string dropScript = @"
+        -- 1. Удаляем все ограничения внешних ключей
+        DECLARE @sql NVARCHAR(MAX) = N'';
+        SELECT @sql += 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';'
+        FROM sys.foreign_keys;
+        EXEC sp_executesql @sql;
+
+        -- 2. Удаляем все пользовательские таблицы
+        SET @sql = N'';
+        SELECT @sql += 'DROP TABLE ' + QUOTENAME(s.name) + '.' + QUOTENAME(t.name) + ';'
+        FROM sys.tables t
+        JOIN sys.schemas s ON t.schema_id = s.schema_id
+        WHERE t.name NOT IN ('__EFMigrationsHistory');
+        EXEC sp_executesql @sql;
+    ";
+                using (var cmd = new SqlCommand(dropScript, connection))
                 {
                     cmd.ExecuteNonQuery();
                 }
@@ -140,17 +146,26 @@ namespace PharmacyApp.Services
 
         private static string MapCSharpTypeToSql(PropertyInfo prop)
         {
+            // 1. Если явно задан TypeName в атрибуте [Column], используем его
+            var columnAttr = prop.GetCustomAttribute<ColumnAttribute>();
+            if (columnAttr != null && !string.IsNullOrEmpty(columnAttr.TypeName))
+                return columnAttr.TypeName.ToUpperInvariant();
+
             Type type = prop.PropertyType;
             bool isNullable = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
             if (isNullable)
                 type = type.GetGenericArguments()[0];
 
+            // 2. Обработка простых типов
             if (type == typeof(int) || type == typeof(short) || type == typeof(byte))
                 return "INT";
             if (type == typeof(long))
                 return "BIGINT";
             if (type == typeof(decimal))
+            {
+                // Можно задать точность через атрибут [Column(TypeName = "decimal(18,4)")] или по умолчанию
                 return "DECIMAL(18,2)";
+            }
             if (type == typeof(float))
                 return "REAL";
             if (type == typeof(double))
@@ -158,24 +173,47 @@ namespace PharmacyApp.Services
             if (type == typeof(bool))
                 return "BIT";
             if (type == typeof(DateTime))
-                return "DATETIME2";
+                return "DATETIME2(7)";          
             if (type == typeof(DateTimeOffset))
-                return "DATETIMEOFFSET";
+                return "DATETIMEOFFSET(7)";
             if (type == typeof(TimeSpan))
-                return "TIME";
+                return "TIME(7)";
             if (type == typeof(Guid))
                 return "UNIQUEIDENTIFIER";
-            if (type == typeof(string))
+
+            // 3. Строковые типы (юникод)
+            if (type == typeof(string) || type == typeof(char) || type == typeof(char?))
             {
-                var maxLengthAttr = prop.GetCustomAttribute<MaxLengthAttribute>();
-                int length = maxLengthAttr?.Length ?? 255;
-                return length == -1 || length > 4000 ? "NVARCHAR(MAX)" : $"NVARCHAR({length})";
+                int maxLength = GetMaxStringLength(prop);
+                if (maxLength == -1 || maxLength > 4000)
+                    return "NVARCHAR(MAX)";
+                return $"NVARCHAR({maxLength})";
             }
+
             if (type == typeof(byte[]))
                 return "VARBINARY(MAX)";
+
             if (type.IsEnum)
                 return "INT";
+
             throw new NotSupportedException($"Тип {type.Name} не поддерживается для маппинга в SQL");
+        }
+
+        // Вспомогательный метод для получения максимальной длины строки из атрибутов
+        private static int GetMaxStringLength(PropertyInfo prop)
+        {
+            // Проверяем MaxLengthAttribute
+            var maxLenAttr = prop.GetCustomAttribute<MaxLengthAttribute>();
+            if (maxLenAttr != null && maxLenAttr.Length > 0)
+                return maxLenAttr.Length;
+
+            // Проверяем StringLengthAttribute (из System.ComponentModel.DataAnnotations)
+            var strLenAttr = prop.GetCustomAttribute<StringLengthAttribute>();
+            if (strLenAttr != null && strLenAttr.MaximumLength > 0)
+                return strLenAttr.MaximumLength;
+
+            // Значение по умолчанию
+            return 255;
         }
 
         private static bool IsNullable(PropertyInfo prop)

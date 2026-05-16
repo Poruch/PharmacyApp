@@ -15,7 +15,7 @@ namespace PharmacyApp
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            DatabaseInitializer.DropAllTables();
+            //DatabaseInitializer.DropAllTables();
             DatabaseInitializer.EnsureDatabaseCreated();
 
         }

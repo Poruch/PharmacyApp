@@ -1,0 +1,91 @@
+﻿<Window x:Class="PharmacyApp.Views.ReportsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Отчёты и аналитика" Height="600" Width="800"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Margin="0,0,0,10">
+            <TabItem Header="Дашборд">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="#E3F2FD" Padding="10" CornerRadius="6" Margin="0,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Выручка вчера" Foreground="#1565C0"/>
+                                <TextBlock Text="{Binding YesterdayRevenue, StringFormat=C}" FontSize="22" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#E8F5E9" Padding="10" CornerRadius="6" Margin="5,0,5,0" Grid.Column="1">
+                            <StackPanel>
+                                <TextBlock Text="Кол-во чеков" Foreground="#2E7D32"/>
+                                <TextBlock Text="{Binding YesterdayReceiptCount}" FontSize="22" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FFF3E0" Padding="10" CornerRadius="6" Margin="5,0,0,0" Grid.Column="2">
+                            <StackPanel>
+                                <TextBlock Text="Средний чек" Foreground="#E65100"/>
+                                <TextBlock Text="{Binding YesterdayAverageCheck, StringFormat=C}" FontSize="22" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    <Button Grid.Row="1" Content="Обновить дашборд" Command="{Binding RefreshDashboardCommand}" 
+                            Width="150" HorizontalAlignment="Left" Padding="8,5"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Топ категорий по выручке">
+                <DataGrid ItemsSource="{Binding TopCategories}" AutoGenerateColumns="False" IsReadOnly="True" Margin="10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="*"/>
+                        <DataGridTextColumn Header="Выручка" Binding="{Binding Revenue, StringFormat=C}" Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Агрегаты по кассирам">
+                <DataGrid ItemsSource="{Binding CashierStats}" AutoGenerateColumns="False" IsReadOnly="True" Margin="10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Кассир" Binding="{Binding CashierName}" Width="*"/>
+                        <DataGridTextColumn Header="Кол-во чеков" Binding="{Binding ReceiptCount}" Width="100"/>
+                        <DataGridTextColumn Header="Сумма продаж" Binding="{Binding TotalSales, StringFormat=C}" Width="120"/>
+                        <DataGridTextColumn Header="Средний чек" Binding="{Binding AverageCheck, StringFormat=C}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Мониторинг дефектуры">
+                <StackPanel>
+                    <DataGrid ItemsSource="{Binding DeficitItems}" AutoGenerateColumns="False" IsReadOnly="True" Margin="10" Height="300">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
+                            <DataGridTextColumn Header="Текущий остаток" Binding="{Binding CurrentStock}" Width="100"/>
+                            <DataGridTextColumn Header="Мин. остаток" Binding="{Binding MinStock}" Width="100"/>
+                            <DataGridTextColumn Header="Рекомендуемый заказ" Binding="{Binding SuggestedOrderQty}" Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Content="Создать черновик заказа по дефицитным товарам" 
+                            Command="{Binding CreateDraftOrderCommand}" Margin="10,5,10,10" Padding="8,5"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Экспорт ежедневного отчёта в Excel" Command="{Binding ExportDailyReportCommand}" 
+                    Width="220" Margin="0,0,10,0" Background="#17A2B8" Foreground="White"/>
+            <Button Content="Закрыть" Command="{Binding CloseCommand}" Width="100"/>
+        </StackPanel>
+    </Grid>
+</Window>
