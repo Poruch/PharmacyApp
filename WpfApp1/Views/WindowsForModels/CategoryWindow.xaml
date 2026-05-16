@@ -1,0 +1,45 @@
+﻿<Window x:Class="PharmacyApp.Views.CategoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Категория" Height="350" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#F0F0F0" x:Name="CategoryWindowControl">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding Title, ElementName=CategoryWindowControl}"
+                   FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+        <!-- Название категории -->
+        <StackPanel Grid.Row="1" Margin="0,5">
+            <TextBlock Text="Название категории:" FontWeight="Bold"/>
+            <TextBox x:Name="txtName" Text="{Binding CategoryName, ElementName=CategoryWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Описание -->
+        <StackPanel Grid.Row="2" Margin="0,5">
+            <TextBlock Text="Описание:" FontWeight="Bold"/>
+            <TextBox x:Name="txtDescription" Text="{Binding CategoryDescription, ElementName=CategoryWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="60" Margin="0,5,0,0" Padding="5" TextWrapping="Wrap" AcceptsReturn="True"/>
+        </StackPanel>
+
+        <!-- Панель ошибок -->
+        <Border Grid.Row="3" Background="#FFE0E0" BorderBrush="Red" BorderThickness="1" CornerRadius="3" Padding="5" Margin="0,10,0,0">
+            <TextBlock x:Name="txtError" Foreground="Red" TextWrapping="Wrap"/>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <Button Content="Сохранить" Width="100" Height="35" Margin="10" Click="BtnSave_Click"
+                    Background="LightGreen" FontSize="14" IsEnabled="{Binding CanSave, ElementName=CategoryWindowControl}"/>
+            <Button Content="Отмена" Width="100" Height="35" Margin="10" Click="BtnCancel_Click"
+                    Background="LightGray" FontSize="14"/>
+        </StackPanel>
+    </Grid>
+</Window>

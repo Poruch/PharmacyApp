@@ -1,0 +1,96 @@
+﻿<Window x:Class="PharmacyApp.Views.BatchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Партия" Height="828" Width="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#F0F0F0" x:Name="BatchWindowControl">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding Title, ElementName=BatchWindowControl}"
+                   FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+        <!-- Серийный номер -->
+        <StackPanel Grid.Row="1" Margin="0,5">
+            <TextBlock Text="Серийный номер:" FontWeight="Bold"/>
+            <TextBox x:Name="txtSerialNumber" Text="{Binding BatchSerialNumber, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Дата производства -->
+        <StackPanel Grid.Row="2" Margin="0,5">
+            <TextBlock Text="Дата производства:" FontWeight="Bold"/>
+            <DatePicker x:Name="dpProductionDate" SelectedDate="{Binding BatchProductionDate, ElementName=BatchWindowControl}"
+                        Height="30" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Срок годности -->
+        <StackPanel Grid.Row="3" Margin="0,5">
+            <TextBlock Text="Срок годности (необязательно):" FontWeight="Bold"/>
+            <DatePicker x:Name="dpExpiryDate" SelectedDate="{Binding BatchExpiryDate, ElementName=BatchWindowControl}"
+                        Height="30" Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Закупочная цена -->
+        <StackPanel Grid.Row="4" Margin="0,5">
+            <TextBlock Text="Закупочная цена:" FontWeight="Bold"/>
+            <TextBox x:Name="txtPurchasePrice" Text="{Binding BatchPurchasePrice, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Продажная цена -->
+        <StackPanel Grid.Row="5" Margin="0,5">
+            <TextBlock Text="Продажная цена:" FontWeight="Bold"/>
+            <TextBox x:Name="txtSellingPrice" Text="{Binding BatchSellingPrice, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Количество -->
+        <StackPanel Grid.Row="6" Margin="0,5">
+            <TextBlock Text="Количество:" FontWeight="Bold"/>
+            <TextBox x:Name="txtQuantity" Text="{Binding BatchQuantity, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Внешние ключи -->
+        <StackPanel Grid.Row="7" Margin="0,5">
+            <TextBlock Text="ID товара:" FontWeight="Bold"/>
+            <TextBox x:Name="txtItemId" Text="{Binding BatchItemId, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+        <StackPanel Grid.Row="8" Margin="0,5">
+            <TextBlock Text="ID поставщика:" FontWeight="Bold"/>
+            <TextBox x:Name="txtSupplierId" Text="{Binding BatchSupplierId, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+        <StackPanel Grid.Row="9" Margin="0,5">
+            <TextBlock Text="ID места хранения:" FontWeight="Bold"/>
+            <TextBox x:Name="txtLocationId" Text="{Binding BatchLocationId, ElementName=BatchWindowControl, UpdateSourceTrigger=PropertyChanged}"
+                     Height="30" Margin="0,5,0,0" Padding="5"/>
+        </StackPanel>
+
+        <!-- Панель ошибок -->
+        <Border Grid.Row="10" Background="#FFE0E0" BorderBrush="Red" BorderThickness="1" CornerRadius="3" Padding="5" Margin="0,10,0,0">
+            <TextBlock x:Name="txtError" Foreground="Red" TextWrapping="Wrap"/>
+        </Border>
+
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <Button Content="Сохранить" Width="100" Height="35" Margin="10" Click="BtnSave_Click"
+                    Background="LightGreen" FontSize="14" IsEnabled="{Binding CanSave, ElementName=BatchWindowControl}"/>
+            <Button Content="Отмена" Width="100" Height="35" Margin="10" Click="BtnCancel_Click"
+                    Background="LightGray" FontSize="14"/>
+        </StackPanel>
+    </Grid>
+</Window>

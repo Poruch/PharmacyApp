@@ -1,0 +1,90 @@
+﻿<UserControl x:Class="PharmacyApp.Controls.PharmacistControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F4F7FB">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель пользователя -->
+        <Border Background="White" Padding="10" CornerRadius="8" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="Провизор: " VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding CurrentUser}" FontWeight="Bold" Margin="0,0,20,0"/>
+                <Button Content="Выйти" Command="{Binding LogoutCommand}" Background="#E74C3C" Foreground="White" Padding="10,5" BorderThickness="0" Cursor="Hand"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Основная область с прокруткой -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Приёмка товара -->
+                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="📥 Приёмка товара" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding InvoiceScanCode}" Margin="0,3" Padding="8"/>
+                        <Button Content="🔍 Найти поставщика по накладной" Command="{Binding FindSupplierByInvoiceCommand}" Margin="0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="Поставщик: " Width="80"/>
+                            <TextBlock Text="{Binding FoundSupplierName}" FontWeight="Bold"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding PurchasePrice}" Margin="0,3" Padding="8"/>
+                        <TextBox Text="{Binding RetailPrice}" Margin="0,3" Padding="8"/>
+                        <TextBox Text="{Binding StorageLocation}" Margin="0,3" Padding="8"/>
+                        <Button Content="💾 Сохранить партию и экземпляры" Command="{Binding SaveBatchAndItemsCommand}" Background="#28A745" Foreground="White" Margin="0,5"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Перемещение партии -->
+                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="🚚 Перемещение партии" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <ComboBox ItemsSource="{Binding Batches}" DisplayMemberPath="SerialNumber" SelectedItem="{Binding SelectedBatch}" Margin="0,3"/>
+                        <TextBox Text="{Binding NewStorageLocation}" Margin="0,3" Padding="8"/>
+                        <Button Content="Переместить" Command="{Binding MoveBatchCommand}" Background="#17A2B8" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Инвентаризация – используем Grid для растяжения DataGrid -->
+                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="🔍 Инвентаризация" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <DataGrid ItemsSource="{Binding InventoryItems}" AutoGenerateColumns="False" MinHeight="150" Margin="0,5">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
+                                <DataGridTextColumn Header="Учётное кол-во" Binding="{Binding AccountQuantity}" Width="100"/>
+                                <DataGridTextColumn Header="Фактическое кол-во" Binding="{Binding ActualQuantity, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="📊 Сравнить и скорректировать остатки" Command="{Binding CompareAndCorrectCommand}" Background="#FF9800" Foreground="White" Margin="0,5"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Списание просрочки -->
+                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="⏰ Списание просроченных товаров" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <DataGrid ItemsSource="{Binding ExpiredBatches}" AutoGenerateColumns="False" MinHeight="120" Margin="0,5">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
+                                <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="80"/>
+                                <DataGridTextColumn Header="Сумма убытка" Binding="{Binding LossAmount, StringFormat=C}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="📄 Создать документ списания" Command="{Binding CreateWriteOffDocCommand}" Background="#E83E8C" Foreground="White" Margin="0,5"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Условия хранения -->
+                <Border Background="#FFF8E1" Padding="15" CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock Text="🌡️ Условия хранения (текущая партия)" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding SelectedBatchStorageConditions}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

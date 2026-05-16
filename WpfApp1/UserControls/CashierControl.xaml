@@ -1,0 +1,138 @@
+﻿<UserControl x:Class="PharmacyApp.Controls.CashierControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F0F4F8">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- панель смены -->
+            <RowDefinition Height="*"/>
+            <!-- основное содержимое -->
+        </Grid.RowDefinitions>
+
+        <!-- Панель смены (без изменений) -->
+        <Border Background="White" Padding="10" CornerRadius="8" Margin="0,0,0,10">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <TextBlock Text="Кассир: " VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding CurrentUser}" FontWeight="Bold" Margin="0,0,20,0"/>
+                    <Border Background="AliceBlue" Padding="8,2" CornerRadius="12">
+                        <TextBlock Text="{Binding ShiftStatusText}" FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="🕒 Открыть смену" Command="{Binding OpenShiftCommand}" Background="#28A745" Foreground="White" Padding="10,5" Margin="0,0,5,0"/>
+                    <Button Content="🔒 Закрыть смену" Command="{Binding CloseShiftCommand}" Background="#DC3545" Foreground="White" Padding="10,5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Основная область: две колонки, которые растягиваются по высоте -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- левая колонка (корзина) -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- разделитель -->
+                <ColumnDefinition Width="*"/>
+                <!-- правая колонка (возвраты + смена) -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Левая колонка: корзина -->
+            <Border Background="White" Padding="15" CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- заголовок -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- поле сканирования -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- чекбокс рецепта -->
+                        <RowDefinition Height="*"/>
+                        <!-- DataGrid корзины (растягивается) -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- итого -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- кнопки оплаты -->
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="🛒 Текущая продажа" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Grid.Row="0"/>
+                    <TextBox Text="{Binding Barcode}" Grid.Row="1" Margin="0,3" Padding="8"/>
+                    <CheckBox Content="Рецепт проверен" IsChecked="{Binding PrescriptionVerified}" IsEnabled="{Binding IsPrescriptionRequired}" Margin="0,5" Grid.Row="2"/>
+
+                    <DataGrid ItemsSource="{Binding Cart}" AutoGenerateColumns="False" Grid.Row="3" Margin="0,10" MinHeight="150">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
+                            <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="70"/>
+                            <DataGridTextColumn Header="Цена" Binding="{Binding Price, StringFormat=C}" Width="80"/>
+                            <DataGridTextColumn Header="Сумма" Binding="{Binding Total, StringFormat=C}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="4" Margin="0,10">
+                        <TextBlock Text="Итого: " FontSize="18" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding CartTotal, StringFormat=C}" FontSize="24" FontWeight="Bold" Foreground="#2C7BE5"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="5" Margin="0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Content="💵 Оплата (наличные)" Command="{Binding PayCashCommand}" Background="#28A745" Foreground="White" Padding="10" Margin="0,0,5,0"/>
+                        <Button Content="💳 Оплата (карта)" Command="{Binding PayCardCommand}" Background="#007BFF" Foreground="White" Padding="10" Margin="5,0,0,0" Grid.Column="1"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- Правая колонка: возвраты и смена -->
+            <Border Grid.Column="2" Background="White" Padding="15" CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- заголовок возврата -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- поле номера чека -->
+                        <RowDefinition Height="*"/>
+                        <!-- DataGrid возврата (растягивается) -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- кнопка возврата -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- разделитель -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- заголовок смены -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- информация о смене -->
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="🔄 Возврат товара" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Grid.Row="0"/>
+                    <TextBox Text="{Binding ReturnReceiptNumber}" Grid.Row="1" Margin="0,3" Padding="8"/>
+
+                    <DataGrid ItemsSource="{Binding ReturnItems}" AutoGenerateColumns="False" Grid.Row="2" Margin="0,10" MinHeight="120">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
+                            <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="60"/>
+                            <DataGridCheckBoxColumn Header="Возврат" Binding="{Binding SelectedForReturn}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Button Content="💰 Оформить возврат" Command="{Binding ProcessReturnCommand}" Background="#FD7E14" Foreground="White" Margin="0,5" Grid.Row="3"/>
+
+                    <Separator Margin="0,15,0,10" Grid.Row="4"/>
+
+                    <TextBlock Text="📋 Текущая смена" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" Grid.Row="5"/>
+
+                    <StackPanel Grid.Row="6" Margin="0,5">
+                        <TextBlock Text="{Binding ShiftStartTime, StringFormat='Начало: {0:HH:mm:ss dd.MM.yyyy}'}" />
+                        <TextBlock Text="{Binding ShiftSalesCount, StringFormat='Продаж: {0}'}" />
+                        <TextBlock Text="{Binding ShiftTotalCash, StringFormat='Наличные: {0:C}'}" />
+                        <TextBlock Text="{Binding ShiftTotalCard, StringFormat='Карта: {0:C}'}" />
+                        <TextBlock Text="{Binding ShiftTotal, StringFormat='Всего: {0:C}'}" FontWeight="Bold" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
