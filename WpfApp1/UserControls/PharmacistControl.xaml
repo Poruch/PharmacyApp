@@ -1,90 +1,104 @@
 ﻿<UserControl x:Class="PharmacyApp.Controls.PharmacistControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="#F4F7FB">
-    <Grid Margin="15">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <!-- Панель пользователя -->
-        <Border Background="White" Padding="10" CornerRadius="8" Margin="0,0,0,10">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Text="Провизор: " VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding CurrentUser}" FontWeight="Bold" Margin="0,0,20,0"/>
-                <Button Content="Выйти" Command="{Binding LogoutCommand}" Background="#E74C3C" Foreground="White" Padding="10,5" BorderThickness="0" Cursor="Hand"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Основная область с прокруткой -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <!-- Приёмка товара -->
-                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
+             Background="{StaticResource BrushBackground}">
+    <TabControl Style="{StaticResource MainTabControl}" Margin="4">
+        <!-- Приёмка -->
+        <TabItem Header="📥 Приёмка" Style="{StaticResource InnerTabItem}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <Border Style="{StaticResource CardBorder}" MaxWidth="560" HorizontalAlignment="Left">
                     <StackPanel>
-                        <TextBlock Text="📥 Приёмка товара" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        <TextBox Text="{Binding InvoiceScanCode}" Margin="0,3" Padding="8"/>
-                        <Button Content="🔍 Найти поставщика по накладной" Command="{Binding FindSupplierByInvoiceCommand}" Margin="0,5"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <TextBlock Text="Поставщик: " Width="80"/>
-                            <TextBlock Text="{Binding FoundSupplierName}" FontWeight="Bold"/>
+                        <TextBlock Text="Приёмка товара" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Text="Номер накладной" Style="{StaticResource MutedCaption}" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding InvoiceScanCode}" Margin="0,0,0,8"/>
+                        <Button Content="Найти поставщика" Command="{Binding FindSupplierByInvoiceCommand}"
+                                Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="Поставщик:" Style="{StaticResource MutedCaption}" Width="90"/>
+                            <TextBlock Text="{Binding FoundSupplierName}" FontWeight="SemiBold"/>
                         </StackPanel>
-                        <TextBox Text="{Binding PurchasePrice}" Margin="0,3" Padding="8"/>
-                        <TextBox Text="{Binding RetailPrice}" Margin="0,3" Padding="8"/>
-                        <TextBox Text="{Binding StorageLocation}" Margin="0,3" Padding="8"/>
-                        <Button Content="💾 Сохранить партию и экземпляры" Command="{Binding SaveBatchAndItemsCommand}" Background="#28A745" Foreground="White" Margin="0,5"/>
+                        <Button Content="Открыть окно приёмки партии" Command="{Binding SaveBatchAndItemsCommand}"
+                                Style="{StaticResource AccentButton}" HorizontalContentAlignment="Left"/>
                     </StackPanel>
                 </Border>
+            </ScrollViewer>
+        </TabItem>
 
-                <!-- Перемещение партии -->
-                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="🚚 Перемещение партии" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        <ComboBox ItemsSource="{Binding Batches}" DisplayMemberPath="SerialNumber" SelectedItem="{Binding SelectedBatch}" Margin="0,3"/>
-                        <TextBox Text="{Binding NewStorageLocation}" Margin="0,3" Padding="8"/>
-                        <Button Content="Переместить" Command="{Binding MoveBatchCommand}" Background="#17A2B8" Foreground="White"/>
-                    </StackPanel>
-                </Border>
+        <!-- Склад -->
+        <TabItem Header="🚚 Склад" Style="{StaticResource InnerTabItem}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <StackPanel>
+                    <Border Style="{StaticResource CardBorder}" MaxWidth="560" HorizontalAlignment="Left">
+                        <StackPanel>
+                            <TextBlock Text="Перемещение партии" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Партия" Style="{StaticResource MutedCaption}" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding Batches}" DisplayMemberPath="SerialNumber"
+                                      SelectedItem="{Binding SelectedBatch}" Margin="0,0,0,8"/>
+                            <TextBlock Text="Новое место хранения" Style="{StaticResource MutedCaption}" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding NewStorageLocation}" Margin="0,0,0,12"/>
+                            <Button Content="Переместить" Command="{Binding MoveBatchCommand}"
+                                    Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
 
-                <!-- Инвентаризация – используем Grid для растяжения DataGrid -->
-                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="🔍 Инвентаризация" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        <DataGrid ItemsSource="{Binding InventoryItems}" AutoGenerateColumns="False" MinHeight="150" Margin="0,5">
+                    <Border Style="{StaticResource CardBorder}" MaxWidth="560" HorizontalAlignment="Left" Background="#FFFBEB">
+                        <StackPanel>
+                            <TextBlock Text="Условия хранения" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="{Binding SelectedBatchStorageConditions}" TextWrapping="Wrap" Foreground="#92400E"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Инвентаризация -->
+        <TabItem Header="🔍 Инвентаризация" Style="{StaticResource InnerTabItem}">
+            <Grid Margin="8">
+                <Border Style="{StaticResource CardBorder}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Сверка остатков" Style="{StaticResource SectionTitle}"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding InventoryItems}" AutoGenerateColumns="False" MinHeight="200">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
-                                <DataGridTextColumn Header="Учётное кол-во" Binding="{Binding AccountQuantity}" Width="100"/>
-                                <DataGridTextColumn Header="Фактическое кол-во" Binding="{Binding ActualQuantity, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                                <DataGridTextColumn Header="Учёт" Binding="{Binding AccountQuantity}" Width="80"/>
+                                <DataGridTextColumn Header="Факт" Binding="{Binding ActualQuantity, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Content="📊 Сравнить и скорректировать остатки" Command="{Binding CompareAndCorrectCommand}" Background="#FF9800" Foreground="White" Margin="0,5"/>
-                    </StackPanel>
+                        <Button Grid.Row="2" Content="Сравнить и скорректировать" Command="{Binding CompareAndCorrectCommand}"
+                                Style="{StaticResource WarningButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                    </Grid>
                 </Border>
+            </Grid>
+        </TabItem>
 
-                <!-- Списание просрочки -->
-                <Border Background="White" Padding="15" CornerRadius="8" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="⏰ Списание просроченных товаров" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        <DataGrid ItemsSource="{Binding ExpiredBatches}" AutoGenerateColumns="False" MinHeight="120" Margin="0,5">
+        <!-- Списание -->
+        <TabItem Header="⏰ Списание" Style="{StaticResource InnerTabItem}">
+            <Grid Margin="8">
+                <Border Style="{StaticResource CardBorder}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Просроченные товары" Style="{StaticResource SectionTitle}"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding ExpiredBatches}" AutoGenerateColumns="False" MinHeight="200">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
                                 <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="80"/>
-                                <DataGridTextColumn Header="Сумма убытка" Binding="{Binding LossAmount, StringFormat=C}" Width="100"/>
+                                <DataGridTextColumn Header="Убыток" Binding="{Binding LossAmount, StringFormat=C}" Width="100"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Content="📄 Создать документ списания" Command="{Binding CreateWriteOffDocCommand}" Background="#E83E8C" Foreground="White" Margin="0,5"/>
-                    </StackPanel>
+                        <Button Grid.Row="2" Content="Создать документ списания" Command="{Binding CreateWriteOffDocCommand}"
+                                Style="{StaticResource DangerButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                    </Grid>
                 </Border>
-
-                <!-- Условия хранения -->
-                <Border Background="#FFF8E1" Padding="15" CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="🌡️ Условия хранения (текущая партия)" FontWeight="Bold" Margin="0,0,0,8"/>
-                        <TextBlock Text="{Binding SelectedBatchStorageConditions}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>

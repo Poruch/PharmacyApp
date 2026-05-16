@@ -110,6 +110,15 @@ public class Batch :EntityBase
 
     public Batch() { }
 
+    [NotMapped]
+    public string SerialNumber => BatchNumber;
+
+    [NotMapped]
+    public string? ItemName { get; set; }
+
+    [NotMapped]
+    public decimal LossAmount => Quantity * PurchasePrice;
+
     public Batch(string batchNumber, decimal purchasePrice, decimal retailPrice, int quantity, int itemId, int supplierId)
     {
         BatchNumber = batchNumber;

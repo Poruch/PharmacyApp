@@ -1,22 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
+﻿using PharmacyApp.Services;
+using PharmacyApp.ViewModels;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
-namespace PharmacyApp.Controls
+namespace PharmacyApp.Controls;
+
+public partial class PharmacistControl : UserControl
 {
-    public partial class PharmacistControl : UserControl
+    public PharmacistControl()
     {
-        public PharmacistControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+        DataContext = new PharmacistViewModel(
+            ServiceLocator.ReceivingService,
+            ServiceLocator.ItemService,
+            ServiceLocator.InventoryService);
     }
 }

@@ -63,7 +63,9 @@ public class AppUser : EntityBase
             _login = value;
         }
     }
-
+    public string FullName => string.IsNullOrWhiteSpace(Patronymic)
+        ? $"{LastName} {FirstName}"
+        : $"{LastName} {FirstName} {Patronymic}"; 
     [Column("PasswordHash")]
     public string PasswordHash
     {
@@ -82,7 +84,7 @@ public class AppUser : EntityBase
         get => _role;
         set
         {
-            var allowed = new[] { "provizor", "pharmacist", "manager", "admin" };
+            var allowed = new[] { "provizor", "pharmacist", "manager", "admin", "cashier" };
             if (!allowed.Contains(value))
                 throw new ArgumentException($"Role must be one of: {string.Join(", ", allowed)}");
             _role = value;

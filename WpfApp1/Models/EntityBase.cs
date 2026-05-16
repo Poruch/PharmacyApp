@@ -6,6 +6,13 @@ namespace PharmacyApp.Models
 {
     public abstract class EntityBase
     {
+        public static string QuoteIdentifier(string name) =>
+            $"[{name.Replace("]", "]]")}]";
+
+        public string GetQuotedTableName() => QuoteIdentifier(GetTableName());
+
+        public static string GetQuotedTableName<T>() where T : EntityBase =>
+            QuoteIdentifier(GetTableName<T>());
 
         // Получение имени таблицы
         public string GetTableName()
@@ -73,6 +80,9 @@ namespace PharmacyApp.Models
             return colAttr?.Name ?? prop.Name;
         }
 
+        private string GetQuotedColumnName(PropertyInfo prop) =>
+            QuoteIdentifier(GetColumnName(prop));
+
         // Генерация INSERT: только столбцы, помеченные [Column] (исключая ключ)
         public (string sql, Dictionary<string, object?> parameters) GenerateInsertSql()
         {
@@ -81,14 +91,14 @@ namespace PharmacyApp.Models
                 .Where(p => p != keyProp) // исключаем ключ
                 .ToList();
 
-            var columns = props.Select(GetColumnName);
+            var columns = props.Select(GetQuotedColumnName);
             var paramNames = props.Select(p => "@" + p.Name);
 
-            string keyColumn = GetKeyColumnName();
+            string keyColumn = QuoteIdentifier(GetKeyColumnName());
 
             var sql = $@"
-                INSERT INTO {GetTableName()} ({string.Join(", ", columns)})
-                OUTPUT INSERTED.[{keyColumn}]
+                INSERT INTO {GetQuotedTableName()} ({string.Join(", ", columns)})
+                OUTPUT INSERTED.{keyColumn}
                 VALUES ({string.Join(", ", paramNames)});";
 
             var parameters = new Dictionary<string, object?>();
@@ -105,13 +115,13 @@ namespace PharmacyApp.Models
                 .Where(p => p != keyProp)
                 .ToList();
 
-            var setClauses = props.Select(p => $"{GetColumnName(p)} = @{p.Name}");
+            var setClauses = props.Select(p => $"{GetQuotedColumnName(p)} = @{p.Name}");
 
-            string keyColumn = GetKeyColumnName();
+            string keyColumn = QuoteIdentifier(GetKeyColumnName());
             object keyValue = GetKeyValue();
 
             var sql = $@"
-                UPDATE {GetTableName()}
+                UPDATE {GetQuotedTableName()}
                 SET {string.Join(", ", setClauses)}
                 WHERE {keyColumn} = @KeyId";
 
@@ -127,7 +137,7 @@ namespace PharmacyApp.Models
             string keyColumn = GetKeyColumnName();
             object keyValue = GetKeyValue();
             // Возвращаем параметризованный SQL, но значение подставим позже
-            return $"DELETE FROM {GetTableName()} WHERE {keyColumn} = @KeyId";
+            return $"DELETE FROM {GetQuotedTableName()} WHERE {QuoteIdentifier(keyColumn)} = @KeyId";
         }
 
         // Для удобства: получить параметр удаления

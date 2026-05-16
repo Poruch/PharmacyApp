@@ -4,6 +4,11 @@
              xmlns:local="clr-namespace:PharmacyApp"
              StartupUri="Views/MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/PharmacyTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <converters:BarHeightConverter x:Key="BarHeightConverter" xmlns:converters="clr-namespace:PharmacyApp.Converters"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

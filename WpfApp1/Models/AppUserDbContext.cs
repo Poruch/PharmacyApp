@@ -9,4 +9,10 @@ public class AppUserDbContext : DbContext
     {
         optionsBuilder.UseSqlServer(ConfigManager.ConnectionString);
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AppUser>().ToTable("USER");
+        base.OnModelCreating(modelBuilder);
+    }
 }

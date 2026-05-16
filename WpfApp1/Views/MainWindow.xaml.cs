@@ -1,79 +1,90 @@
-﻿using PharmacyApp.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using PharmacyApp.Controls;
+using PharmacyApp.Services;
+using PharmacyApp.ViewModels;
+using PharmacyApp.Views;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
-using PharmacyApp.Controls;
-namespace PharmacyApp.Views
+namespace PharmacyApp.Views;
+
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
+        InitializeComponent();
+        ManagerViewModel.LogoutRequested = OnLogoutRequested;
+
+        var loginWindow = new LoginRegisterWindow();
+        if (loginWindow.ShowDialog() != true)
         {
-            InitializeComponent();
-            var loginWindow = new LoginRegisterWindow();
-            if (loginWindow.ShowDialog() != true)
-            {
-                App.Current.Shutdown();
-                return;
-            }
+            Application.Current.Shutdown();
+            return;
+        }
+
+        App.CurrentUser = AuthenticationService.CurrentUser;
+        ConfigureForRole(App.CurrentUser?.Role);
+    }
+
+    private void ConfigureForRole(string? role)
+    {
+        TxtCurrentUser.Text = App.CurrentUser?.FullName ?? "Гость";
+
+        TabManager.Visibility = Visibility.Collapsed;
+        TabPharmacist.Visibility = Visibility.Collapsed;
+        TabCashier.Visibility = Visibility.Collapsed;
+        TabCatalog.Visibility = Visibility.Collapsed;
+
+        switch (role?.ToLowerInvariant())
+        {
+            case "manager":
+            case "admin":
+                TabManager.Visibility = Visibility.Visible;
+                TabCatalog.Visibility = Visibility.Visible;
+                MainTabs.SelectedItem = TabManager;
+                TxtRoleHint.Text = role == "admin" ? "Администратор" : "Панель менеджера";
+                break;
+            case "provizor":
+            case "pharmacist":
+                TabPharmacist.Visibility = Visibility.Visible;
+                TabCatalog.Visibility = Visibility.Visible;
+                MainTabs.SelectedItem = TabPharmacist;
+                TxtRoleHint.Text = "Панель провизора";
+                break;
+            case "cashier":
+                TabCashier.Visibility = Visibility.Visible;
+                MainTabs.SelectedItem = TabCashier;
+                TxtRoleHint.Text = "Рабочее место кассира";
+                break;
+            default:
+                TabCashier.Visibility = Visibility.Visible;
+                MainTabs.SelectedItem = TabCashier;
+                break;
+        }
+
+        // Демо: admin видит все вкладки
+        if (role == "admin")
+        {
+            TabPharmacist.Visibility = Visibility.Visible;
+            TabCashier.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
+
+    private void LogoutButton_Click(object sender, RoutedEventArgs e) => OnLogoutRequested();
+
+    private void OnLogoutRequested()
+    {
+        App.CurrentUser = null;
+        var loginWindow = new LoginRegisterWindow();
+        if (loginWindow.ShowDialog() == true)
+        {
             App.CurrentUser = AuthenticationService.CurrentUser;
-            if (App.CurrentUser != null)
-            {
-
-
-            }
+            ConfigureForRole(App.CurrentUser?.Role);
         }
-        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        else
         {
-            var tab = (TabItem)e.AddedItems[0];
-            switch (tab.Tag.ToString())
-            {
-                case "Manager":
-                    MainContent.Content = new ManagerControl();
-                    break;
-                case "Pharmacist":
-                    MainContent.Content = new PharmacistControl();
-                    break;
-                case "Cashier":
-                    MainContent.Content = new CashierControl();
-                    break;
-            }
+            Application.Current.Shutdown();
         }
-        private void LogoutButton_Click(object sender, RoutedEventArgs e)
-        {
-            App.CurrentUser = null;
-            var loginWindow = new LoginRegisterWindow();
-            if (loginWindow.ShowDialog() == true)
-            {
-                App.CurrentUser = AuthenticationService.CurrentUser;
-            }
-            else
-            {
-                Application.Current.Shutdown();
-            }
-        }
-
-
-
-        private void UsersButton_Click(object sender, RoutedEventArgs e)
-        {
-
-            var usersWindow = new UsersManagementWindow();
-            usersWindow.Owner = this;
-            usersWindow.ShowDialog();
-        }
-
     }
 }
