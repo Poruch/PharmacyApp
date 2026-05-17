@@ -31,13 +31,11 @@ namespace PharmacyApp.Services
             {
                 connection.Open();
                 string dropScript = @"
-        -- 1. Удаляем все ограничения внешних ключей
         DECLARE @sql NVARCHAR(MAX) = N'';
         SELECT @sql += 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';'
         FROM sys.foreign_keys;
         EXEC sp_executesql @sql;
 
-        -- 2. Удаляем все пользовательские таблицы
         SET @sql = N'';
         SELECT @sql += 'DROP TABLE ' + QUOTENAME(s.name) + '.' + QUOTENAME(t.name) + ';'
         FROM sys.tables t
@@ -99,7 +97,6 @@ namespace PharmacyApp.Services
                     cmd.ExecuteNonQuery();
                 }
 
-                // Добавляем внешние ключи, если столбец уже есть (старые БД могут отставать по схеме)
                 foreach (var fk in foreignKeys)
                 {
                     string checkFkSql = $@"
@@ -177,7 +174,7 @@ namespace PharmacyApp.Services
             if (type == typeof(bool))
                 return "BIT";
             if (type == typeof(DateTime))
-                return "DATETIME2(7)";          
+                return "DATETIME2(7)";
             if (type == typeof(DateTimeOffset))
                 return "DATETIMEOFFSET(7)";
             if (type == typeof(TimeSpan))

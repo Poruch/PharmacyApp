@@ -17,7 +17,6 @@ namespace PharmacyApp
             base.OnStartup(e);
             //DatabaseInitializer.DropAllTables();
             DatabaseInitializer.EnsureDatabaseCreated();
-            StorageLocationSchemaMigrator.MigrateIfNeeded();
             DatabaseSeeder.SeedIfEmpty();
         }
     }

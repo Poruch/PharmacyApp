@@ -7,6 +7,7 @@ namespace PharmacyApp.Views
     public partial class LoginRegisterWindow : Window
     {
         bool _isDevelope = true;
+        static bool _isFirstRequest = true;
         public LoginRegisterWindow()
         {
             InitializeComponent();
@@ -16,12 +17,13 @@ namespace PharmacyApp.Views
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             await AuthenticationService.EnsureFirstAdminCreatedAsync();
-            if (_isDevelope)
+            if (_isDevelope && _isFirstRequest)
             {
                 bool success = await AuthenticationService.LoginAsync("admin", "admin123");
                 if (success)
                 {
                     DialogResult = true;
+                    _isFirstRequest = false;
                     Close();
                     return;
                 }
