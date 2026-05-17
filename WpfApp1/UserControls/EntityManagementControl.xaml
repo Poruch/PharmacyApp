@@ -13,7 +13,7 @@
                 BorderBrush="{StaticResource BrushBorder}" BorderThickness="1" Margin="0,0,0,8">
             <StackPanel>
                 <TextBlock Text="Справочники" FontSize="18" FontWeight="SemiBold" Foreground="#1E293B"/>
-                <TextBlock Text="Управление категориями, товарами, поставщиками и партиями"
+                <TextBlock Text="Управление категориями, товарами, поставщиками, местами хранения и партиями"
                            Style="{StaticResource MutedCaption}" Margin="0,4,0,0"/>
             </StackPanel>
         </Border>
@@ -27,6 +27,9 @@
             </TabItem>
             <TabItem Header="Поставщики" Style="{StaticResource InnerTabItem}">
                 <crud:SupplierCrudControl/>
+            </TabItem>
+            <TabItem Header="Места хранения" Style="{StaticResource InnerTabItem}">
+                <crud:StorageLocationCrudControl/>
             </TabItem>
             <TabItem Header="Партии" Style="{StaticResource InnerTabItem}">
                 <crud:BatchCrudControl/>

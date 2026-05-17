@@ -99,11 +99,15 @@ namespace PharmacyApp.Services
                     cmd.ExecuteNonQuery();
                 }
 
-                // Добавляем внешние ключи, если их ещё нет
+                // Добавляем внешние ключи, если столбец уже есть (старые БД могут отставать по схеме)
                 foreach (var fk in foreignKeys)
                 {
                     string checkFkSql = $@"
-                        IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = '{fk.ConstraintName}')
+                        IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = '{fk.ConstraintName}')
+                           AND EXISTS (
+                               SELECT 1 FROM sys.columns c
+                               INNER JOIN sys.tables t ON c.object_id = t.object_id
+                               WHERE t.name = '{tableName}' AND c.name = '{fk.ForeignKeyColumn}')
                         BEGIN
                             ALTER TABLE [{tableName}] 
                             ADD CONSTRAINT [{fk.ConstraintName}] 

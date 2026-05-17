@@ -18,13 +18,51 @@ public class InventoryService : IInventoryService
         _repo = new EntityRepository(_connectionString);
     }
 
-    public void MoveBatch(int batchId, string newStorageLocation)
+    public void MoveBatch(int batchId, int storageLocationId)
     {
         using var conn = new SqlConnection(_connectionString);
         conn.Execute(
-            "UPDATE BATCH SET StorageLocation = @loc WHERE Id = @id",
-            new { loc = newStorageLocation, id = batchId });
+            "UPDATE BATCH SET StorageLocationId = @locId WHERE [ID] = @id",
+            new { locId = storageLocationId, id = batchId });
     }
+
+    public List<InventoryItem> GetInventoryRows()
+    {
+        using var conn = new SqlConnection(_connectionString);
+        return conn.Query<InventoryItem>(@"
+            SELECT
+                b.[ID] AS BatchId,
+                b.BatchNumber,
+                i.Name AS ItemName,
+                b.ExpiryDate,
+                b.StorageLocationId,
+                CASE
+                    WHEN sl.LocationId IS NULL THEN N'—'
+                    WHEN sl.Cell IS NULL OR sl.Cell = '' THEN sl.Shelf
+                    ELSE sl.Shelf + N', ' + sl.Cell
+                END AS StorageLocationName,
+                b.Quantity AS AccountQuantity,
+                b.Quantity AS ActualQuantity
+            FROM BATCH b
+            INNER JOIN ITEM i ON i.Id = b.ItemId
+            LEFT JOIN STORAGE_LOCATION sl ON sl.LocationId = b.StorageLocationId
+            WHERE b.Quantity > 0
+            ORDER BY i.Name, b.ExpiryDate, b.BatchNumber").ToList();
+    }
+
+    public List<InventoryChangeDto> GetInventoryChanges(ObservableCollection<InventoryItem> inventoryItems) =>
+        inventoryItems
+            .Where(i => i.ActualQuantity != i.AccountQuantity)
+            .Select(i => new InventoryChangeDto
+            {
+                BatchNumber = i.BatchNumber,
+                ItemName = i.ItemName,
+                ExpiryDate = i.ExpiryDate,
+                StorageLocationName = i.StorageLocationName,
+                AccountQuantity = i.AccountQuantity,
+                ActualQuantity = i.ActualQuantity
+            })
+            .ToList();
 
     public void CompareAndCorrect(ObservableCollection<InventoryItem> inventoryItems)
     {
@@ -35,35 +73,17 @@ public class InventoryService : IInventoryService
         {
             foreach (var row in inventoryItems)
             {
-                int diff = row.ActualQuantity - row.AccountQuantity;
-                if (diff == 0)
+                if (row.ActualQuantity == row.AccountQuantity)
                     continue;
 
-                var batches = conn.Query<Batch>(
-                    "SELECT * FROM BATCH WHERE ItemId = @itemId ORDER BY ExpiryDate ASC",
-                    new { row.ItemId }, transaction).ToList();
+                int updated = conn.Execute(
+                    "UPDATE BATCH SET Quantity = @qty WHERE [ID] = @batchId",
+                    new { qty = row.ActualQuantity, batchId = row.BatchId },
+                    transaction);
 
-                if (diff > 0)
-                {
-                    var target = batches.FirstOrDefault() ?? throw new InvalidOperationException(
-                        $"Нет партии для товара {row.ItemName}");
-                    conn.Execute(
-                        "UPDATE BATCH SET Quantity = Quantity + @diff WHERE Id = @id",
-                        new { diff, id = target.Id }, transaction);
-                }
-                else
-                {
-                    int toWriteOff = -diff;
-                    foreach (var batch in batches)
-                    {
-                        if (toWriteOff <= 0) break;
-                        int take = Math.Min(batch.Quantity, toWriteOff);
-                        conn.Execute(
-                            "UPDATE BATCH SET Quantity = Quantity - @take WHERE Id = @id",
-                            new { take, id = batch.Id }, transaction);
-                        toWriteOff -= take;
-                    }
-                }
+                if (updated == 0)
+                    throw new InvalidOperationException(
+                        $"Партия {row.BatchNumber} ({row.ItemName}) не найдена в базе.");
             }
 
             transaction.Commit();
@@ -79,14 +99,29 @@ public class InventoryService : IInventoryService
     {
         using var conn = new SqlConnection(_connectionString);
         var batches = conn.Query<Batch>(@"
-            SELECT b.* FROM BATCH b
-            WHERE b.ExpiryDate < GETDATE() AND b.Quantity > 0").ToList();
-
-        foreach (var batch in batches)
-        {
-            batch.ItemName = conn.QueryFirstOrDefault<string>(
-                "SELECT Name FROM ITEM WHERE Id = @id", new { id = batch.ItemId });
-        }
+            SELECT
+                b.[ID] AS Id,
+                b.BatchNumber,
+                b.ProductionDate,
+                b.ExpiryDate,
+                b.PurchasePrice,
+                b.RetailPrice,
+                b.Quantity,
+                b.StorageLocationId,
+                b.ItemId,
+                b.SupplierId,
+                i.Name AS ItemName,
+                CASE
+                    WHEN sl.LocationId IS NULL THEN N'—'
+                    WHEN sl.Cell IS NULL OR sl.Cell = '' THEN sl.Shelf
+                    ELSE sl.Shelf + N', ' + sl.Cell
+                END AS StorageLocationName
+            FROM BATCH b
+            INNER JOIN ITEM i ON i.Id = b.ItemId
+            LEFT JOIN STORAGE_LOCATION sl ON sl.LocationId = b.StorageLocationId
+            WHERE CAST(b.ExpiryDate AS DATE) < CAST(GETDATE() AS DATE)
+              AND b.Quantity > 0
+            ORDER BY b.ExpiryDate, i.Name").ToList();
 
         return new ObservableCollection<Batch>(batches);
     }
@@ -115,7 +150,7 @@ public class InventoryService : IInventoryService
             foreach (var batch in expiredBatches)
             {
                 conn.Execute(
-                    "UPDATE BATCH SET Quantity = 0 WHERE Id = @id",
+                    "UPDATE BATCH SET Quantity = 0 WHERE [ID] = @id",
                     new { id = batch.Id }, transaction);
                 conn.Execute(@"
                     UPDATE UNIQUE_ITEM SET Status = 'written_off'

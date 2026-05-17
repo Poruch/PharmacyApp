@@ -10,85 +10,124 @@ namespace PharmacyApp.Services;
 
 public class ShiftService : IShiftService
 {
-    private readonly string _connectionString;
+    private ShiftSession? _current;
 
-    public ShiftService() => _connectionString = ConfigManager.ConnectionString;
-
-    public bool IsShiftOpen
+    private sealed class ShiftSession
     {
-        get
-        {
-            using var conn = new SqlConnection(_connectionString);
-            var openShift = conn.QueryFirstOrDefault<Shift>(
-                "SELECT TOP 1 * FROM SHIFT WHERE EndTime IS NULL ORDER BY StartTime DESC");
-            return openShift != null;
-        }
+        public DateTime StartTime { get; init; }
+        public int CashierId { get; init; }
+        public string CashierName { get; init; } = "";
+        public List<ShiftSaleEntry> Sales { get; } = new();
+        public int SalesCount { get; set; }
+        public decimal TotalCash { get; set; }
+        public decimal TotalCard { get; set; }
     }
+
+    public bool IsShiftOpen => _current != null;
 
     public void OpenShift()
     {
-        using var conn = new SqlConnection(_connectionString);
-        conn.Execute(@"
-            INSERT INTO SHIFT (StartTime, CashierId, IsActive)
-            VALUES (GETDATE(), @cashierId, 1)",
-            new { cashierId = App.CurrentUser?.UserId ?? 1 });
+        if (_current != null)
+            throw new InvalidOperationException("Смена уже открыта");
+
+        _current = new ShiftSession
+        {
+            StartTime = DateTime.Now,
+            CashierId = App.CurrentUser?.UserId ?? 0,
+            CashierName = App.CurrentUser?.FullName ?? "Кассир"
+        };
     }
 
-    public void CloseShift()
+    public string? CloseShift()
     {
-        using var conn = new SqlConnection(_connectionString);
-        conn.Execute("UPDATE SHIFT SET EndTime = GETDATE(), IsActive = 0 WHERE EndTime IS NULL");
+        if (_current == null)
+            return null;
+
+        var info = BuildShiftInfo(DateTime.Now);
+        string path = ReceiptFileService.SaveShiftReport(info, _current.CashierName, _current.Sales);
+        _current = null;
+        return path;
     }
 
     public ShiftInfo GetCurrentShiftInfo()
     {
-        using var conn = new SqlConnection(_connectionString);
-        var shift = conn.QueryFirstOrDefault<Shift>(
-            "SELECT TOP 1 * FROM SHIFT WHERE EndTime IS NULL ORDER BY StartTime DESC");
-        if (shift == null)
+        if (_current == null)
             return new ShiftInfo();
 
-        var stats = conn.QueryFirstOrDefault<dynamic>(@"
-            SELECT
-                COUNT(*) AS SalesCount,
-                ISNULL(SUM(CASE WHEN PaymentType = 'cash' THEN TotalAmount ELSE 0 END), 0) AS TotalCash,
-                ISNULL(SUM(CASE WHEN PaymentType = 'card' THEN TotalAmount ELSE 0 END), 0) AS TotalCard
-            FROM SALE
-            WHERE CashierId = @cashierId AND Date >= @startTime",
-            new { cashierId = shift.CashierId, startTime = shift.StartTime });
-
-        return new ShiftInfo
-        {
-            StartTime = shift.StartTime,
-            SalesCount = (int)(stats?.SalesCount ?? 0),
-            TotalCash = (decimal)(stats?.TotalCash ?? 0m),
-            TotalCard = (decimal)(stats?.TotalCard ?? 0m)
-        };
+        return BuildShiftInfo(null);
     }
+
+    public void RecordSale(int saleId, decimal totalAmount, string paymentType)
+    {
+        if (_current == null)
+            return;
+
+        _current.Sales.Add(new ShiftSaleEntry
+        {
+            SaleId = saleId,
+            Date = DateTime.Now,
+            TotalAmount = totalAmount,
+            PaymentType = paymentType
+        });
+
+        _current.SalesCount++;
+        if (paymentType == "cash")
+            _current.TotalCash += totalAmount;
+        else
+            _current.TotalCard += totalAmount;
+    }
+
+    private ShiftInfo BuildShiftInfo(DateTime? endTime) =>
+        new()
+        {
+            StartTime = _current!.StartTime,
+            EndTime = endTime,
+            SalesCount = _current.SalesCount,
+            TotalCash = _current.TotalCash,
+            TotalCard = _current.TotalCard
+        };
 }
 
 public class SaleService : ISaleService
 {
     private readonly string _connectionString;
+    private readonly IShiftService _shiftService;
 
-    public SaleService() => _connectionString = ConfigManager.ConnectionString;
+    public SaleService(IShiftService shiftService)
+    {
+        _connectionString = ConfigManager.ConnectionString;
+        _shiftService = shiftService;
+    }
 
-    public void Sale(ObservableCollection<CartItem> cart, string paymentType)
+    public SaleResult Sale(ObservableCollection<CartItem> cart, string paymentType)
     {
         if (cart == null || cart.Count == 0)
             throw new InvalidOperationException("Корзина пуста");
+
+        if (!_shiftService.IsShiftOpen)
+            throw new InvalidOperationException("Смена не открыта. Откройте смену перед продажей.");
+
+        var lines = cart.Select(c => new SaleLineResult
+        {
+            ItemName = c.ItemName,
+            Quantity = c.Quantity,
+            Price = c.Price
+        }).ToList();
+
+        decimal totalAmount = cart.Sum(i => i.Total);
+        string cashierName = App.CurrentUser?.FullName ?? "Кассир";
+        int cashierId = App.CurrentUser?.UserId ?? 1;
 
         using var conn = new SqlConnection(_connectionString);
         conn.Open();
         using var transaction = conn.BeginTransaction();
         try
         {
-            decimal totalAmount = cart.Sum(i => i.Total);
             var saleId = conn.QuerySingle<int>(@"
                 INSERT INTO SALE (Date, TotalAmount, PaymentType, CashierId)
                 VALUES (GETDATE(), @totalAmount, @paymentType, @cashierId);
                 SELECT CAST(SCOPE_IDENTITY() as int)",
-                new { totalAmount, paymentType, cashierId = App.CurrentUser?.UserId ?? 1 },
+                new { totalAmount, paymentType, cashierId },
                 transaction);
 
             foreach (var item in cart)
@@ -144,6 +183,18 @@ public class SaleService : ISaleService
 
             transaction.Commit();
             cart.Clear();
+
+            _shiftService.RecordSale(saleId, totalAmount, paymentType);
+
+            return new SaleResult
+            {
+                SaleId = saleId,
+                Date = DateTime.Now,
+                TotalAmount = totalAmount,
+                PaymentType = paymentType,
+                CashierName = cashierName,
+                Lines = lines
+            };
         }
         catch
         {

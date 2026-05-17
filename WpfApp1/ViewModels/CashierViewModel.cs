@@ -129,19 +129,36 @@ public class CashierViewModel : INotifyPropertyChanged
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
-        _shiftService.CloseShift();
+        string? reportPath = _shiftService.CloseShift();
         RefreshShiftInfo();
-        MessageBox.Show("Смена закрыта.", "Смена", MessageBoxButton.OK, MessageBoxImage.Information);
+        string message = reportPath != null
+            ? $"Смена закрыта.\nОтчёт сохранён:\n{reportPath}"
+            : "Смена закрыта.";
+        MessageBox.Show(message, "Смена", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Pay(string type)
     {
+        if (!_shiftService.IsShiftOpen)
+        {
+            MessageBox.Show("Откройте смену перед оформлением продажи.", "Смена",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         try
         {
-            _saleService.Sale(Cart, type);
+            var result = _saleService.Sale(Cart, type);
+            string receiptPath = ReceiptFileService.SaveSaleReceipt(result);
             OnPropertyChanged(nameof(CartTotal));
             RefreshShiftInfo();
-            MessageBox.Show("Оплата прошла успешно.", "Продажа", MessageBoxButton.OK, MessageBoxImage.Information);
+            PayCashCommand.RaiseCanExecuteChanged();
+            PayCardCommand.RaiseCanExecuteChanged();
+            MessageBox.Show(
+                $"Оплата прошла успешно.\nЧек №{result.SaleId}\nФайл чека:\n{receiptPath}",
+                "Продажа",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

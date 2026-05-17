@@ -2,6 +2,7 @@ using Dapper;
 using Microsoft.Data.SqlClient;
 using PharmacyApp.Interfaces;
 using PharmacyApp.Models;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -88,16 +89,43 @@ public class ReportService : IReportService
     public string ExportDailyReportToExcel(DateTime date)
     {
         using var conn = new SqlConnection(_connectionString);
-        var sales = conn.Query(@"
-            SELECT Id, Date, TotalAmount, PaymentType, CashierId
-            FROM SALE WHERE CAST(Date AS DATE) = @day",
-            new { day = date.Date }).ToList();
 
-        var writeoffs = conn.Query(@"
+        var sales = conn.Query<DailySaleRow>(@"
+            SELECT
+                s.Id,
+                s.Date,
+                s.TotalAmount,
+                s.PaymentType,
+                s.CashierId,
+                u.LastName + ' ' + u.FirstName AS CashierName
+            FROM SALE s
+            LEFT JOIN [USER] u ON u.UserId = s.CashierId
+            WHERE CAST(s.Date AS DATE) = @day
+            ORDER BY s.Date",
+            new { day = date.Date }).AsList();
+
+        var saleLines = conn.Query<DailySaleLineRow>(@"
+            SELECT
+                si.SaleId,
+                i.Name AS ItemName,
+                si.Quantity,
+                si.PriceAtSale,
+                si.Quantity * si.PriceAtSale AS LineTotal
+            FROM SALE_ITEM si
+            INNER JOIN SALE s ON s.Id = si.SaleId
+            INNER JOIN ITEM i ON i.Id = si.ItemId
+            WHERE CAST(s.Date AS DATE) = @day
+            ORDER BY si.SaleId, i.Name",
+            new { day = date.Date }).AsList();
+
+        var writeoffs = conn.Query<DailyWriteoffRow>(@"
             SELECT DocNumber, Date, Reason, Details
             FROM DOCUMENT
-            WHERE Type = 'writeoff' AND CAST(Date AS DATE) = @day",
-            new { day = date.Date }).ToList();
+            WHERE Type = 'writeoff' AND CAST(Date AS DATE) = @day
+            ORDER BY Date",
+            new { day = date.Date }).AsList();
+
+        var (revenue, receiptCount, avgCheck) = GetStatsForDay(date);
 
         string folder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -106,39 +134,98 @@ public class ReportService : IReportService
         string path = Path.Combine(folder, $"daily_report_{date:yyyyMMdd}.csv");
 
         var sb = new StringBuilder();
-        sb.AppendLine("Продажи");
-        sb.AppendLine("Id;Date;TotalAmount;PaymentType;CashierId");
+        sb.AppendLine($"Ежедневный отчёт;{date:dd.MM.yyyy}");
+        sb.AppendLine();
+        sb.AppendLine("Сводка");
+        sb.AppendLine("Показатель;Значение");
+        sb.AppendLine($"Выручка;{revenue.ToString("F2", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"Количество чеков;{receiptCount}");
+        sb.AppendLine($"Средний чек;{avgCheck.ToString("F2", CultureInfo.InvariantCulture)}");
+        sb.AppendLine();
+
+        sb.AppendLine("Продажи (чеки)");
+        sb.AppendLine("Id;Дата;Сумма;Оплата;Кассир");
         foreach (var s in sales)
-            sb.AppendLine($"{s.Id};{s.Date};{s.TotalAmount};{s.PaymentType};{s.CashierId}");
+            sb.AppendLine($"{s.Id};{s.Date:dd.MM.yyyy HH:mm};{s.TotalAmount:F2};{s.PaymentType};{EscapeCsv(s.CashierName)}");
+
+        sb.AppendLine();
+        sb.AppendLine("Позиции в чеках");
+        sb.AppendLine("SaleId;Товар;Кол-во;Цена;Сумма");
+        foreach (var line in saleLines)
+            sb.AppendLine($"{line.SaleId};{EscapeCsv(line.ItemName)};{line.Quantity};{line.PriceAtSale:F2};{line.LineTotal:F2}");
 
         sb.AppendLine();
         sb.AppendLine("Списания");
-        sb.AppendLine("DocNumber;Date;Reason;Details");
+        sb.AppendLine("Номер;Дата;Причина;Детали");
         foreach (var w in writeoffs)
-            sb.AppendLine($"{w.DocNumber};{w.Date};{w.Reason};{w.Details}");
+            sb.AppendLine($"{EscapeCsv(w.DocNumber)};{w.Date:dd.MM.yyyy HH:mm};{EscapeCsv(w.Reason)};{EscapeCsv(w.Details)}");
 
-        File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+        // UTF-8 BOM — Excel корректно открывает кириллицу
+        File.WriteAllText(path, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
         return path;
     }
 
-    public void CreateDraftOrderForDeficitItems()
+    public int? CreateDraftOrderForDeficitItems()
     {
         var deficit = GetDeficitItems().Where(d => d.SuggestedOrderQty > 0).ToList();
         if (deficit.Count == 0)
-            return;
+            return null;
 
-        var details = string.Join("; ", deficit.Select(d =>
-            $"{d.ItemName}: заказать {d.SuggestedOrderQty} (остаток {d.CurrentStock}, мин. {d.MinStock})"));
+        int createdBy = AuthenticationService.CurrentUser?.UserId
+            ?? App.CurrentUser?.UserId
+            ?? 0;
+        if (createdBy == 0)
+            throw new InvalidOperationException("Не удалось определить пользователя для создания черновика. Войдите в систему.");
+
+        var lines = deficit.Select(d =>
+            $"{d.ItemId}|{d.ItemName}|{d.SuggestedOrderQty}|{d.CurrentStock}|{d.MinStock}");
+        var details = string.Join(Environment.NewLine, lines);
 
         var doc = new Document(
             $"ORD-{DateTime.Now:yyyyMMddHHmmss}",
-            "receipt",
+            "order",
             "draft",
-            App.CurrentUser?.UserId ?? 1)
+            createdBy)
         {
-            Reason = "Черновик заказа по дефициту",
+            Reason = "Черновик заказа поставщику по дефициту",
             Details = details
         };
-        _repo.Add(doc);
+        return _repo.Add(doc);
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+        if (value.Contains(';') || value.Contains('"') || value.Contains('\n'))
+            return $"\"{value.Replace("\"", "\"\"")}\"";
+        return value;
+    }
+
+    private sealed class DailySaleRow
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string PaymentType { get; set; } = "";
+        public int CashierId { get; set; }
+        public string? CashierName { get; set; }
+    }
+
+    private sealed class DailySaleLineRow
+    {
+        public int SaleId { get; set; }
+        public string ItemName { get; set; } = "";
+        public int Quantity { get; set; }
+        public decimal PriceAtSale { get; set; }
+        public decimal LineTotal { get; set; }
+    }
+
+    private sealed class DailyWriteoffRow
+    {
+        public string DocNumber { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string? Reason { get; set; }
+        public string? Details { get; set; }
     }
 }

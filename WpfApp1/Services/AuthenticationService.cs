@@ -20,25 +20,26 @@ namespace PharmacyApp.Services
         public static async Task EnsureFirstAdminCreatedAsync()
         {
             using var db = new AppUserDbContext();
-            if (!await db.Users.AnyAsync())
+            bool adminExists = await db.Users.AnyAsync(u => u.Login == "admin");
+            if (adminExists)
+                return;
+
+            string salt = PasswordHelper.GenerateSalt();
+            string hash = PasswordHelper.HashPassword("admin123", salt);
+            var admin = new AppUser
             {
-                string salt = PasswordHelper.GenerateSalt();
-                string hash = PasswordHelper.HashPassword("admin123", salt);
-                var admin = new AppUser
-                {
-                    Login = "admin",
-                    PasswordHash = hash,
-                    Salt = salt,
-                    LastName = "Администратор",
-                    FirstName = "Системный",
-                    Patronymic = "",
-                    Role = "admin",
-                    IsActive = true,
-                    RegistrationDate = DateTime.Now
-                };
-                db.Users.Add(admin);
-                await db.SaveChangesAsync();
-            }
+                Login = "admin",
+                PasswordHash = hash,
+                Salt = salt,
+                LastName = "Администратор",
+                FirstName = "Системный",
+                Patronymic = null,
+                Role = "admin",
+                IsActive = true,
+                RegistrationDate = DateTime.Now
+            };
+            db.Users.Add(admin);
+            await db.SaveChangesAsync();
         }
 
         /// <summary>

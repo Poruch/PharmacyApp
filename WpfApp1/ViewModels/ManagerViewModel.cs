@@ -143,8 +143,29 @@ public class ManagerViewModel : INotifyPropertyChanged
 
     private void CreateDraftOrder()
     {
-        _reportService.CreateDraftOrderForDeficitItems();
-        MessageBox.Show("Черновик заказа создан", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+        try
+        {
+            int? docId = _reportService.CreateDraftOrderForDeficitItems();
+            if (docId == null)
+            {
+                MessageBox.Show(
+                    "Нет товаров с дефицитом на складе. Черновик не создан.",
+                    "Заказ поставщику",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            MessageBox.Show(
+                $"Черновик заказа поставщику создан (документ №{docId}).",
+                "Успех",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private static void RequestLogout() => LogoutRequested?.Invoke();

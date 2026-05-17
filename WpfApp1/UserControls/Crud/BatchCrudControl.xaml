@@ -15,6 +15,7 @@
                 <DataGridTextColumn Header="Серия" Binding="{Binding BatchNumber}" Width="90"/>
                 <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
                 <DataGridTextColumn Header="Поставщик" Binding="{Binding SupplierName}" Width="*"/>
+                <DataGridTextColumn Header="Место" Binding="{Binding StorageLocationName}" Width="*"/>
                 <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="60"/>
                 <DataGridTextColumn Header="Розн." Binding="{Binding RetailPrice, StringFormat=N2}" Width="70"/>
             </DataGrid.Columns>
@@ -55,7 +56,7 @@
                     <TextBlock Grid.Row="3" Text="Срок годности" VerticalAlignment="Center"/>
                     <DatePicker x:Name="DpExpiry" Grid.Row="3" Grid.Column="1" Margin="0,4"/>
                     <TextBlock Grid.Row="3" Grid.Column="2" Text="Место хранения" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <TextBox x:Name="TxtStorage" Grid.Row="3" Grid.Column="3" Margin="0,4" Padding="6"/>
+                    <ComboBox x:Name="CmbStorage" Grid.Row="3" Grid.Column="3" DisplayMemberPath="DisplayName" Margin="0,4" Padding="4"/>
 
                     <TextBlock Grid.Row="4" Text="Дата производства" VerticalAlignment="Center"/>
                     <DatePicker x:Name="DpProduction" Grid.Row="4" Grid.Column="1" Margin="0,4"/>

@@ -45,7 +45,7 @@ public class Document : EntityBase
         get => _type;
         set
         {
-            var allowed = new[] { "writeoff", "receipt", "inventory", "pricechange" };
+            var allowed = new[] { "writeoff", "receipt", "inventory", "pricechange", "order" };
             if (!allowed.Contains(value))
                 throw new ArgumentException($"Type must be one of: {string.Join(", ", allowed)}");
             _type = value;

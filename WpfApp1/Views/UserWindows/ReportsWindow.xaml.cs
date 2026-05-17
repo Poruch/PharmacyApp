@@ -50,7 +50,7 @@ namespace PharmacyApp.Views
             DeficitItems = new ObservableCollection<DeficitItemDto>();
 
             RefreshDashboardCommand = new RelayCommand(_ => LoadDashboard());
-            CreateDraftOrderCommand = new RelayCommand(_ => _reportService.CreateDraftOrderForDeficitItems());
+            CreateDraftOrderCommand = new RelayCommand(_ => CreateDraftOrder());
             ExportDailyReportCommand = new RelayCommand(_ => ExportDailyReport());
             CloseCommand = new RelayCommand(_ => Close());
 
@@ -104,6 +104,33 @@ namespace PharmacyApp.Views
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CreateDraftOrder()
+        {
+            try
+            {
+                int? docId = _reportService.CreateDraftOrderForDeficitItems();
+                if (docId == null)
+                {
+                    MessageBox.Show(
+                        "Нет товаров с дефицитом. Черновик заказа не создан.",
+                        "Заказ поставщику",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                MessageBox.Show(
+                    $"Черновик заказа создан (документ №{docId}).",
+                    "Успех",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

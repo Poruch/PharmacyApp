@@ -50,4 +50,7 @@ public class StorageLocation : EntityBase
         Shelf = shelf;
         Cell = cell;
     }
+
+    [NotMapped]
+    public string DisplayName => string.IsNullOrWhiteSpace(Cell) ? Shelf : $"{Shelf}, {Cell}";
 }

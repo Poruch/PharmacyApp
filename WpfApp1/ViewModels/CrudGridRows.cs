@@ -27,6 +27,7 @@ public class BatchGridRow
     public string BatchNumber => Entity.BatchNumber;
     public string ItemName { get; init; } = "—";
     public string SupplierName { get; init; } = "—";
+    public string StorageLocationName { get; init; } = "—";
     public int Quantity => Entity.Quantity;
     public decimal RetailPrice => Entity.RetailPrice;
 }
@@ -58,15 +59,20 @@ public static class CrudGridRowsFactory
     public static List<BatchGridRow> CreateBatchRows(
         IEnumerable<Batch> batches,
         IEnumerable<Item> items,
-        IEnumerable<Supplier> suppliers)
+        IEnumerable<Supplier> suppliers,
+        IEnumerable<StorageLocation> locations)
     {
         var itemsById = items.ToDictionary(i => i.Id);
         var suppliersById = suppliers.ToDictionary(s => s.Id);
+        var locationsById = locations.ToDictionary(l => l.LocationId);
         return batches.Select(b => new BatchGridRow
         {
             Entity = b,
             ItemName = itemsById.TryGetValue(b.ItemId, out var item) ? item.Name : "—",
-            SupplierName = suppliersById.TryGetValue(b.SupplierId, out var sup) ? sup.Name : "—"
+            SupplierName = suppliersById.TryGetValue(b.SupplierId, out var sup) ? sup.Name : "—",
+            StorageLocationName = b.StorageLocationId is int locId && locationsById.TryGetValue(locId, out var loc)
+                ? loc.DisplayName
+                : "—"
         }).ToList();
     }
 }

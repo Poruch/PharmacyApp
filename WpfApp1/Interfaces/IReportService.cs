@@ -23,8 +23,8 @@ namespace PharmacyApp.Interfaces
         /// <returns>Путь к сохранённому файлу</returns>
         string ExportDailyReportToExcel(DateTime date);
 
-        /// <summary>Создать черновик заказа поставщику по дефицитным товарам</summary>
-        void CreateDraftOrderForDeficitItems();
+        /// <summary>Создать черновик заказа поставщику по дефицитным товарам. Возвращает Id документа или null.</summary>
+        int? CreateDraftOrderForDeficitItems();
     }
 
     public class CategoryRevenueDto

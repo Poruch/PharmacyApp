@@ -35,7 +35,8 @@
                             <ComboBox ItemsSource="{Binding Batches}" DisplayMemberPath="SerialNumber"
                                       SelectedItem="{Binding SelectedBatch}" Margin="0,0,0,8"/>
                             <TextBlock Text="Новое место хранения" Style="{StaticResource MutedCaption}" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding NewStorageLocation}" Margin="0,0,0,12"/>
+                            <ComboBox ItemsSource="{Binding StorageLocations}" DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding SelectedNewStorageLocation}" Margin="0,0,0,12"/>
                             <Button Content="Переместить" Command="{Binding MoveBatchCommand}"
                                     Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left"/>
                         </StackPanel>
@@ -61,15 +62,23 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Сверка остатков" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                            <TextBlock Text="Сверка остатков" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Сверка по партиям: укажите фактическое количество для каждой серии."
+                                       Style="{StaticResource MutedCaption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
                         <DataGrid Grid.Row="1" ItemsSource="{Binding InventoryItems}" AutoGenerateColumns="False" MinHeight="200">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
-                                <DataGridTextColumn Header="Учёт" Binding="{Binding AccountQuantity}" Width="80"/>
-                                <DataGridTextColumn Header="Факт" Binding="{Binding ActualQuantity, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                                <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Серия" Binding="{Binding BatchNumber}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Срок годности" Binding="{Binding ExpiryDate, StringFormat=dd.MM.yyyy}" Width="100" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Место" Binding="{Binding StorageLocationName}" Width="100" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Учёт" Binding="{Binding AccountQuantity}" Width="60" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Факт" Binding="{Binding ActualQuantity, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
+                                <DataGridTextColumn Header="Δ" Binding="{Binding Difference}" Width="45" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Row="2" Content="Сравнить и скорректировать" Command="{Binding CompareAndCorrectCommand}"
+                        <Button Grid.Row="2" Content="Проверить и применить изменения" Command="{Binding CompareAndCorrectCommand}"
                                 Style="{StaticResource WarningButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
                     </Grid>
                 </Border>
@@ -86,16 +95,26 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Просроченные товары" Style="{StaticResource SectionTitle}"/>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Просроченные товары" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ExpiredBatchesCount, StringFormat='({0} партий)'}"
+                                       Style="{StaticResource MutedCaption}" Margin="12,4,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
                         <DataGrid Grid.Row="1" ItemsSource="{Binding ExpiredBatches}" AutoGenerateColumns="False" MinHeight="200">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Товар" Binding="{Binding ItemName}" Width="*"/>
-                                <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="80"/>
-                                <DataGridTextColumn Header="Убыток" Binding="{Binding LossAmount, StringFormat=C}" Width="100"/>
+                                <DataGridTextColumn Header="Серия" Binding="{Binding BatchNumber}" Width="100"/>
+                                <DataGridTextColumn Header="Срок годности" Binding="{Binding ExpiryDate, StringFormat=dd.MM.yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="Кол-во" Binding="{Binding Quantity}" Width="70"/>
+                                <DataGridTextColumn Header="Убыток" Binding="{Binding LossAmount, StringFormat=C}" Width="90"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button Grid.Row="2" Content="Создать документ списания" Command="{Binding CreateWriteOffDocCommand}"
-                                Style="{StaticResource DangerButton}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="Обновить список" Command="{Binding RefreshExpiredCommand}"
+                                    Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"/>
+                            <Button Content="Создать документ списания" Command="{Binding CreateWriteOffDocCommand}"
+                                    Style="{StaticResource DangerButton}"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
             </Grid>

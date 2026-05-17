@@ -12,7 +12,7 @@ public class Batch :EntityBase
     private decimal _purchasePrice;
     private decimal _retailPrice;
     private int _quantity;
-    private string? _storageLocation;
+    private int? _storageLocationId;
     private int _itemId;
     private int _supplierId;
 
@@ -87,12 +87,15 @@ public class Batch :EntityBase
         }
     }
 
-    [Column("StorageLocation")]
-    public string? StorageLocation
+    [Column("StorageLocationId")]
+    public int? StorageLocationId
     {
-        get => _storageLocation;
-        set => _storageLocation = value;
+        get => _storageLocationId;
+        set => _storageLocationId = value;
     }
+
+    [ForeignKey(nameof(StorageLocationId))]
+    public StorageLocation? Location { get; set; }
 
     [Column("ItemId")]
     public int ItemId
@@ -115,6 +118,9 @@ public class Batch :EntityBase
 
     [NotMapped]
     public string? ItemName { get; set; }
+
+    [NotMapped]
+    public string? StorageLocationName { get; set; }
 
     [NotMapped]
     public decimal LossAmount => Quantity * PurchasePrice;

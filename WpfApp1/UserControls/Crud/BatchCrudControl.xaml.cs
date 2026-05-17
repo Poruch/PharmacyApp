@@ -1,3 +1,4 @@
+using PharmacyApp.Interfaces;
 using PharmacyApp.Models;
 using PharmacyApp.Services;
 using PharmacyApp.ViewModels;
@@ -9,6 +10,7 @@ namespace PharmacyApp.Controls.Crud;
 public partial class BatchCrudControl : UserControl
 {
     private readonly EntityRepository _repo = new(ConfigManager.ConnectionString);
+    private readonly IStorageLocationService _storageLocationService = ServiceLocator.StorageLocationService;
     private Batch? _selected;
 
     public BatchCrudControl()
@@ -23,9 +25,12 @@ public partial class BatchCrudControl : UserControl
     {
         var items = _repo.GetAll<Item>();
         var suppliers = _repo.GetAll<Supplier>();
+        var locations = _storageLocationService.GetAll();
         CmbItem.ItemsSource = items;
         CmbSupplier.ItemsSource = suppliers;
-        GridBatches.ItemsSource = CrudGridRowsFactory.CreateBatchRows(_repo.GetAll<Batch>(), items, suppliers);
+        CmbStorage.ItemsSource = locations;
+        GridBatches.ItemsSource = CrudGridRowsFactory.CreateBatchRows(
+            _repo.GetAll<Batch>(), items, suppliers, locations);
     }
 
     private void GridBatches_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -38,7 +43,8 @@ public partial class BatchCrudControl : UserControl
         TxtQuantity.Text = batch.Quantity.ToString();
         TxtPurchase.Text = batch.PurchasePrice.ToString("F2");
         TxtRetail.Text = batch.RetailPrice.ToString("F2");
-        TxtStorage.Text = batch.StorageLocation ?? "";
+        CmbStorage.SelectedItem = CmbStorage.Items.Cast<StorageLocation>()
+            .FirstOrDefault(l => l.LocationId == batch.StorageLocationId);
         DpProduction.SelectedDate = batch.ProductionDate;
         DpExpiry.SelectedDate = batch.ExpiryDate;
         CmbItem.SelectedItem = CmbItem.Items.Cast<Item>().FirstOrDefault(i => i.Id == batch.ItemId);
@@ -53,7 +59,7 @@ public partial class BatchCrudControl : UserControl
         TxtQuantity.Text = "10";
         TxtPurchase.Text = "100";
         TxtRetail.Text = "150";
-        TxtStorage.Text = "Стеллаж А";
+        if (CmbStorage.Items.Count > 0) CmbStorage.SelectedIndex = 0;
         DpProduction.SelectedDate = DateTime.Today;
         DpExpiry.SelectedDate = DateTime.Today.AddYears(1);
         if (CmbItem.Items.Count > 0) CmbItem.SelectedIndex = 0;
@@ -70,6 +76,8 @@ public partial class BatchCrudControl : UserControl
                 throw new InvalidOperationException("Выберите товар.");
             if (CmbSupplier.SelectedItem is not Supplier supplier)
                 throw new InvalidOperationException("Выберите поставщика.");
+            if (CmbStorage.SelectedItem is not StorageLocation location)
+                throw new InvalidOperationException("Выберите место хранения.");
             if (!int.TryParse(TxtQuantity.Text, out int qty) || qty < 0)
                 throw new InvalidOperationException("Укажите корректное количество.");
             if (!decimal.TryParse(TxtPurchase.Text, out decimal purchase) || purchase < 0)
@@ -83,7 +91,7 @@ public partial class BatchCrudControl : UserControl
                 {
                     ProductionDate = DpProduction.SelectedDate ?? DateTime.Today,
                     ExpiryDate = DpExpiry.SelectedDate,
-                    StorageLocation = TxtStorage.Text.Trim()
+                    StorageLocationId = location.LocationId
                 };
                 _repo.Add(entity);
             }
@@ -97,7 +105,7 @@ public partial class BatchCrudControl : UserControl
                 _selected.RetailPrice = retail;
                 _selected.ProductionDate = DpProduction.SelectedDate ?? DateTime.Today;
                 _selected.ExpiryDate = DpExpiry.SelectedDate;
-                _selected.StorageLocation = TxtStorage.Text.Trim();
+                _selected.StorageLocationId = location.LocationId;
                 _repo.Update(_selected);
             }
 

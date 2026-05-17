@@ -1,4 +1,5 @@
 ﻿using PharmacyApp.Interfaces;
+using PharmacyApp.Services;
 using PharmacyApp.Models;
 using PharmacyApp.ViewModels;
 using System.Collections.ObjectModel;
@@ -12,14 +13,20 @@ public partial class ReceivingWindow : Window, INotifyPropertyChanged
 {
     private readonly IReceivingService _receivingService;
     private readonly IItemService _itemService;
+    private readonly IStorageLocationService _storageLocationService;
 
-    public ReceivingWindow(IReceivingService receivingService, IItemService itemService)
+    public ReceivingWindow(
+        IReceivingService receivingService,
+        IItemService itemService,
+        IStorageLocationService storageLocationService)
     {
         InitializeComponent();
         _receivingService = receivingService;
         _itemService = itemService;
+        _storageLocationService = storageLocationService;
         ScannedCodes = new ObservableCollection<string>();
         AvailableItems = new ObservableCollection<Item>(_itemService.GetAllItems());
+        StorageLocations = new ObservableCollection<StorageLocation>(_storageLocationService.GetAll());
 
         FindSupplierCommand = new RelayCommand(_ => FindSupplier(), _ => !string.IsNullOrWhiteSpace(InvoiceNumber));
         AddCodeCommand = new RelayCommand(_ => AddCode(), _ => !string.IsNullOrWhiteSpace(ScannedCode));
@@ -100,11 +107,13 @@ public partial class ReceivingWindow : Window, INotifyPropertyChanged
         set { _retailPrice = value; OnPropertyChanged(); SaveBatchCommand.RaiseCanExecuteChanged(); }
     }
 
-    private string? _storageLocation;
-    public string? StorageLocation
+    public ObservableCollection<StorageLocation> StorageLocations { get; }
+
+    private StorageLocation? _selectedStorageLocation;
+    public StorageLocation? SelectedStorageLocation
     {
-        get => _storageLocation;
-        set { _storageLocation = value; OnPropertyChanged(); }
+        get => _selectedStorageLocation;
+        set { _selectedStorageLocation = value; OnPropertyChanged(); }
     }
 
     private int? _quantity;
@@ -151,7 +160,7 @@ public partial class ReceivingWindow : Window, INotifyPropertyChanged
                 PurchasePrice = PurchasePrice!.Value,
                 RetailPrice = RetailPrice!.Value,
                 Quantity = Quantity!.Value,
-                StorageLocation = StorageLocation,
+                StorageLocationId = SelectedStorageLocation?.LocationId,
                 SupplierId = FoundSupplier!.Id,
                 ItemId = SelectedItem!.Id
             };

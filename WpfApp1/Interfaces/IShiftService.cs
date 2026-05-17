@@ -4,54 +4,41 @@ using PharmacyApp.ViewModels;
 
 namespace PharmacyApp.Interfaces
 {
-    /// <summary>
-    /// Сервис для управления сменой кассира
-    /// </summary>
-    public interface IShiftService
-    {
-        /// <summary>Открыта ли смена в данный момент</summary>
-        bool IsShiftOpen { get; }
+  public interface IShiftService
+  {
+    bool IsShiftOpen { get; }
+    void OpenShift();
+    string? CloseShift();
+    ShiftInfo GetCurrentShiftInfo();
+    void RecordSale(int saleId, decimal totalAmount, string paymentType);
+  }
 
-        /// <summary>Открыть новую смену</summary>
-        void OpenShift();
+  public interface ISaleService
+  {
+    SaleResult Sale(ObservableCollection<CartItem> cart, string paymentType);
+  }
 
-        /// <summary>Закрыть текущую смену</summary>
-        void CloseShift();
+  public interface IInventoryService
+  {
+    void MoveBatch(int batchId, int storageLocationId);
+    List<InventoryItem> GetInventoryRows();
+    List<InventoryChangeDto> GetInventoryChanges(ObservableCollection<InventoryItem> inventoryItems);
+    void CompareAndCorrect(ObservableCollection<InventoryItem> inventoryItems);
+    ObservableCollection<Batch> GetExpiredBatches();
+    void CreateWriteOffDocument(ObservableCollection<Batch> expiredBatches);
+  }
 
-        /// <summary>Получить информацию о текущей смене</summary>
-        ShiftInfo GetCurrentShiftInfo();
-    }
-
-    /// <summary>
-    /// Сервис для продажи товаров
-    /// </summary>
-    public interface ISaleService
-    {
-        /// <summary>Оформить продажу товаров из корзины</summary>
-        /// <param name="cart">Корзина с товарами</param>
-        /// <param name="paymentType">Тип оплаты (cash/card)</param>
-        void Sale(ObservableCollection<CartItem> cart, string paymentType);
-    }
-
-    /// <summary>
-    /// Сервис для инвентаризации и управления складскими остатками
-    /// </summary>
-    public interface IInventoryService
-    {
-        /// <summary>Переместить партию в другое место хранения</summary>
-        /// <param name="batchId">ID партии</param>
-        /// <param name="newStorageLocation">Новое место хранения</param>
-        void MoveBatch(int batchId, string newStorageLocation);
-
-        /// <summary>Сравнить учётные и фактические остатки и скорректировать</summary>
-        /// <param name="inventoryItems">Список товаров с фактическими остатками</param>
-        void CompareAndCorrect(ObservableCollection<InventoryItem> inventoryItems);
-
-        /// <summary>Получить список просроченных партий для списания</summary>
-        ObservableCollection<Batch> GetExpiredBatches();
-
-        /// <summary>Создать документ списания просроченных товаров</summary>
-        /// <param name="expiredBatches">Список просроченных партий</param>
-        void CreateWriteOffDocument(ObservableCollection<Batch> expiredBatches);
-    }
+  public class InventoryChangeDto
+  {
+    public string BatchNumber { get; set; } = "";
+    public string ItemName { get; set; } = "";
+    public DateTime? ExpiryDate { get; set; }
+    public string? StorageLocationName { get; set; }
+    public int AccountQuantity { get; set; }
+    public int ActualQuantity { get; set; }
+    public int Difference => ActualQuantity - AccountQuantity;
+    public string ChangeDescription => Difference > 0
+        ? $"Излишек +{Difference}"
+        : $"Недостача {Difference}";
+  }
 }
