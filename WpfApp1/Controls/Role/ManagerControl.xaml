@@ -1,0 +1,102 @@
+﻿<UserControl x:Class="PharmacyApp.Controls.ManagerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BrushBackground}">
+    <TabControl Style="{StaticResource MainTabControl}" Margin="4">
+        <TabItem Header="Дашборд" Style="{StaticResource InnerTabItem}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <StackPanel MaxWidth="900">
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Text="Вчера" Style="{StaticResource SectionTitle}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="Выручка" Style="{StaticResource MutedCaption}"/>
+                                    <TextBlock Text="{Binding YesterdayRevenue, StringFormat=C}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource BrushPrimary}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0">
+                                    <TextBlock Text="Чеков" Style="{StaticResource MutedCaption}"/>
+                                    <TextBlock Text="{Binding YesterdayReceiptCount}" FontSize="22" FontWeight="Bold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                    <TextBlock Text="Средний чек" Style="{StaticResource MutedCaption}"/>
+                                    <TextBlock Text="{Binding YesterdayAverageCheck, StringFormat=C}" FontSize="22" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Grid>
+                            <Button Content="Обновить" Command="{Binding RefreshDashboardCommand}"
+                                    Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" Margin="0,12,0,0" Padding="12,6"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Text="Выручка за 7 дней" Style="{StaticResource SectionTitle}"/>
+                            <Border Background="#F8FAFC" CornerRadius="8" Padding="12,8" MinHeight="120">
+                                <ItemsControl ItemsSource="{Binding WeeklyRevenue}" VerticalAlignment="Bottom">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="6,0" VerticalAlignment="Bottom" Width="44">
+                                                <Border Background="{StaticResource BrushPrimary}" CornerRadius="4,4,0,0"
+                                                        Height="{Binding Value, Converter={StaticResource BarHeightConverter}}"
+                                                        MinHeight="6" VerticalAlignment="Bottom"/>
+                                                <TextBlock Text="{Binding Day}" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="10" Foreground="{StaticResource BrushTextMuted}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Отчёты" Style="{StaticResource InnerTabItem}">
+            <Border Style="{StaticResource CardBorder}" Margin="8" MaxWidth="480" HorizontalAlignment="Left">
+                <StackPanel>
+                    <Button Content="Топ категорий" Command="{Binding ShowCategoryRevenueCommand}"
+                            Style="{StaticResource SecondaryButton}" Margin="0,0,0,8" HorizontalContentAlignment="Left"/>
+                    <Button Content="Статистика кассиров" Command="{Binding ShowCashierStatsCommand}"
+                            Style="{StaticResource SecondaryButton}" Margin="0,0,0,8" HorizontalContentAlignment="Left"/>
+                    <Button Content="Дефицит на складе" Command="{Binding ShowDeficitReportCommand}"
+                            Style="{StaticResource SecondaryButton}" Margin="0,0,0,8" HorizontalContentAlignment="Left"/>
+                    <Button Content="Экспорт дневного отчёта" Command="{Binding ExportDailyReportCommand}"
+                            Style="{StaticResource PrimaryButton}" HorizontalContentAlignment="Left"/>
+                </StackPanel>
+            </Border>
+        </TabItem>
+
+        <TabItem Header="Цены и заказы" Style="{StaticResource InnerTabItem}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <StackPanel MaxWidth="480">
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Text="Цены" Style="{StaticResource SectionTitle}"/>
+                            <Button Content="Массовое изменение цен" Command="{Binding BulkPriceChangeCommand}"
+                                    Style="{StaticResource PrimaryButton}" Margin="0,0,0,8" HorizontalContentAlignment="Left"/>
+                            <Button Content="Печать ценников" Command="{Binding PrintPriceTagsCommand}"
+                                    Style="{StaticResource SecondaryButton}" HorizontalContentAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource CardBorder}">
+                        <StackPanel>
+                            <TextBlock Text="Заказ поставщику" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Черновик по товарам с дефицитом" Style="{StaticResource MutedCaption}" Margin="0,0,0,12"/>
+                            <Button Content="Создать черновик заказа" Command="{Binding CreateDraftOrderCommand}"
+                                    Style="{StaticResource AccentButton}" HorizontalContentAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
+</UserControl>

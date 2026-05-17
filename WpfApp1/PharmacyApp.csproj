@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
+		<RootNamespace>PharmacyApp</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -24,23 +25,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Update="Views\Authentication\LoginRegisterWindow.xaml.cs">
-			<SubType>Code</SubType>
+		<Compile Update="Views\Auth\LoginRegisterWindow.xaml.cs">
+			<DependentUpon>LoginRegisterWindow.xaml</DependentUpon>
 		</Compile>
-		<Compile Update="Views\Authentication\UserEditWindow.xaml.cs">
-			<SubType>Code</SubType>
+		<Compile Update="Views\Auth\UserEditWindow.xaml.cs">
+			<DependentUpon>UserEditWindow.xaml</DependentUpon>
 		</Compile>
-		<Compile Update="Views\Authentication\UsersManagementWindow.xaml.cs">
-			<SubType>Code</SubType>
-		</Compile>
-		<Compile Update="Views\WindowsForModels\BatchWindow.xaml.cs">
-			<SubType>Code</SubType>
-		</Compile>
-		<Compile Update="Views\WindowsForModels\CategoryWindow.xaml.cs">
-			<SubType>Code</SubType>
-		</Compile>
-		<Compile Update="Views\WindowsForModels\ItemWindow.xaml.cs">
-			<SubType>Code</SubType>
+		<Compile Update="Views\Auth\UsersManagementWindow.xaml.cs">
+			<DependentUpon>UsersManagementWindow.xaml</DependentUpon>
 		</Compile>
 	</ItemGroup>
 

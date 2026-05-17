@@ -1,0 +1,24 @@
+PharmacyApp — структура проекта
+================================
+
+Controls/              UI по ролям и справочникам
+  Role/                Кассир, провизор, менеджер
+  Catalog/             Справочники + Crud/
+
+Views/
+  MainWindow.xaml      Главное окно
+  Auth/                Вход, пользователи
+  Dialogs/             Модальные окна (приёмка, отчёты, возврат…)
+
+Models/
+  Entities/            Таблицы БД (Item, Batch, Category…)
+  AppUser, ShiftInfo…  Вспомогательные модели
+
+Services/              Бизнес-логика
+  Database/            Инициализация БД, сидер, репозиторий
+Infrastructure/        ConfigManager (appsettings)
+
+Interfaces/            Контракты сервисов
+ViewModels/            MVVM
+Themes/                Стили WPF
+Converters/

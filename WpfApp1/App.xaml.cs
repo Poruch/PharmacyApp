@@ -18,7 +18,6 @@ namespace PharmacyApp
             //DatabaseInitializer.DropAllTables();
             DatabaseInitializer.EnsureDatabaseCreated();
             StorageLocationSchemaMigrator.MigrateIfNeeded();
-            //AuthenticationService.EnsureFirstAdminCreatedAsync().GetAwaiter().GetResult();
             DatabaseSeeder.SeedIfEmpty();
         }
     }
